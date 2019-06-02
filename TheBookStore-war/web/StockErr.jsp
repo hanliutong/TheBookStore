@@ -8,6 +8,7 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <link rel="stylesheet" type="text/css" href="mycss.css">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>库存变化</title>
     </head>

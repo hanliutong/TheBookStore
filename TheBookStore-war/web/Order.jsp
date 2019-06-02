@@ -13,6 +13,7 @@
     addressStr = new String(addressStr.getBytes("ISO-8859-1"),"utf-8");%>
 <html>
     <head>
+        <link rel="stylesheet" type="text/css" href="mycss.css">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Order Page</title>
     </head>
@@ -58,7 +59,8 @@
             catch(Exception e){%>
             <h2>下单失败</h2>
             <a href="welcome.jsp">返回</a>
-            <%}
+            <%
+            }
             %>       
         </form>
     </body>
