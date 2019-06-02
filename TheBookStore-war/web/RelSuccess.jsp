@@ -13,6 +13,9 @@
     </head>
     <body>
         <h1>发布成功</h1>
+        <%
+            request.getSession().removeAttribute("bookinfo");
+        %>
         <a href="welcome.jsp"> 返回 </a>
     </body>
 </html>

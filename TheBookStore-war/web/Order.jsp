@@ -24,6 +24,9 @@
                 <tr><td>ISBN</td><td>书名</td><td>作者</td><td>库存</td><td>单价</td><td>数量</td><td>价格</td></tr>
             <% List L = (List)request.getSession().getAttribute("carttable"); 
             List<Integer> N = (List)request.getSession().getAttribute("numtable"); 
+            request.getSession().removeAttribute("carttable");
+            request.getSession().removeAttribute("booktable");
+            request.getSession().removeAttribute("numtable");
             Iterator It = L.iterator();
             Entity.Booktable bk = new Booktable();
             double totalPeice = 0;

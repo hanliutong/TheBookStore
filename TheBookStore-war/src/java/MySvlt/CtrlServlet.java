@@ -70,7 +70,7 @@ public class CtrlServlet extends HttpServlet {
                     cartBean = lookupCartBeanLocal();
                     request.getSession(). setAttribute(request. getRemoteAddr(),  this.cartBean);
                     out.println("session超时");
-                    out.println("<a href = \"Search.jsp\">");
+                    out.println("<a href = \"Search.jsp\">返回</a>");
                 }else{
                     cartBean = (CartBeanLocal) request.getSession().getAttribute(request.getRemoteAddr());
                 } 
@@ -124,41 +124,48 @@ public class CtrlServlet extends HttpServlet {
                     String isbn = (String) it.nextElement();
                     if(!(isbn.matches("[0-9]+")))
                             continue;
-                    if(isbn.matches("[0-9]+")){
+                    else{
                         cartBean.updateNum(isbn, Integer.parseInt(request.getParameter(isbn)));
                     }
-                }
+                }//保存Cart页上数量更改
                 switch(request.getParameter("submit")){
                     case("Directory"):
                         request.getRequestDispatcher("Directory.jsp").forward(request, response);
                         break;
                     case("Order"):
-                        request.getSession().setAttribute("numtable", cartBean.getNumber());
-                        List L = (List)request.getSession().getAttribute("carttable"); 
-                        Iterator It = L.iterator();
-                        Entity.Booktable bk = new Booktable();
-                        boolean check = true;
-                        for(int i =0;It.hasNext();i++){
-                            bk = (Booktable) It.next();
-                            if((booktableFacade.findByISBN(bk.getIsbn()).get(0).getStock()-cartBean.getNumber().get(i))<0){
-                                check = false;
-                                break;
-                            }
-                            else{
-                            bk.setStock(bk.getStock()-cartBean.getNumber().get(i));//去库存
-                            }
-                        }
-                        if(check){
-                            It = L.iterator();
-                            while(It.hasNext()){
-                                booktableFacade.edit((Booktable) It.next());
-                            }
+                        if (cartBean.getNumber().isEmpty()){
                             request.getRequestDispatcher("Order.jsp").forward(request, response);
                         }
                         else{
-//                            request.getSession().setAttribute("carttable",L);
-                            
-                            request.getRequestDispatcher("StockErr.jsp").forward(request, response);
+                            request.getSession().setAttribute("numtable", cartBean.getNumber());
+//                            List L = (List)request.getSession().getAttribute("carttable"); 
+                            List L = cartBean.getISBN();
+                            ArrayList<Booktable> tmpList = new ArrayList<>();
+                            Iterator It = L.iterator();
+                            Entity.Booktable bk = new Booktable();
+                            boolean check = true;
+                            for(int i =0;It.hasNext();i++){
+                                bk = booktableFacade.findByISBN(It.next()).get(0) ;
+                                if((bk.getStock()-cartBean.getNumber().get(i))<0){
+                                    check = false;
+                                    break;
+                                }
+                                else{
+                                bk.setStock(bk.getStock()-cartBean.getNumber().get(i));//去库存
+                                tmpList.add(bk);
+                                }
+                            }
+                            if(check){
+                                It = tmpList.iterator();
+                                while(It.hasNext()){
+                                    booktableFacade.edit((Booktable) It.next());
+                                }
+                                request.getSession().setAttribute("carttable", tmpList);
+                                request.getRequestDispatcher("Order.jsp").forward(request, response);
+                            }
+                            else{
+                                request.getRequestDispatcher("StockErr.jsp").forward(request, response);
+                            }
                         }
                         break;
                     default:
@@ -171,35 +178,46 @@ public class CtrlServlet extends HttpServlet {
                 
             }
             if (request.getParameter("page").equals("Release")){
-                List<Booktable> findByISBN = booktableFacade.findByISBN(request.getParameter("ISBN"));
+                String ISBN = request.getParameter("ISBN");
+                ISBN = new String(ISBN.getBytes("ISO-8859-1"),"utf-8");
+                List<Booktable> findByISBN = booktableFacade.findByISBN(ISBN);
                 if(!findByISBN.isEmpty()){
-                    findByISBN.get(0).setStock(findByISBN.get(0).getStock()+Integer.parseInt(request.getParameter("Stock")));
-                    booktableFacade.edit(findByISBN.get(0));
-                    response.sendRedirect("RelSuccess.jsp");
+                    request.getSession().setAttribute("bookinfo", findByISBN.get(0));
+                    request.getRequestDispatcher("NeedMoreInf.jsp").forward(request, response);
                 }
                 else{
+                    request.getSession().setAttribute("bookinfo", null);
                     request.getRequestDispatcher("NeedMoreInf.jsp").forward(request, response);
 //                    response.sendRedirect("NeedMoreInf.jsp");
                 }
             }
+            
+            
             if (request.getParameter("page").equals("NeedMoreInf")){
-                
                 if(request.getParameter("submit").equals("submit")){
-                String ISBN = request.getParameter("ISBN");
-                ISBN = new String(ISBN.getBytes("ISO-8859-1"),"utf-8");
-                String Title = request.getParameter("Title");
-                Title = new String(Title.getBytes("ISO-8859-1"),"utf-8");
-                String Author = request.getParameter("Author");
-                Author = new String(Author.getBytes("ISO-8859-1"),"utf-8");
-                String Stock  = request.getParameter("Stock");
-                Stock = new String(Stock.getBytes("ISO-8859-1"),"utf-8");
-                int Stock_I = Integer.parseInt(Stock);
-                String Price = request.getParameter("Price");
-                Price = new String(Price.getBytes("ISO-8859-1"),"utf-8");
-                double Price_D = Double.parseDouble(Price);
-                Booktable newBook = new Booktable(ISBN,Title,Author,Stock_I,Price_D);
-                booktableFacade.create(newBook);
-                response.sendRedirect("RelSuccess.jsp");
+                    if(request.getSession().getAttribute("bookinfo") == null){
+                        String ISBN = request.getParameter("ISBN");
+                        ISBN = new String(ISBN.getBytes("ISO-8859-1"),"utf-8");
+                        String Title = request.getParameter("Title");
+                        Title = new String(Title.getBytes("ISO-8859-1"),"utf-8");
+                        String Author = request.getParameter("Author");
+                        Author = new String(Author.getBytes("ISO-8859-1"),"utf-8");
+                        String Stock  = request.getParameter("Stock");
+                        Stock = new String(Stock.getBytes("ISO-8859-1"),"utf-8");
+                        int Stock_I = Integer.parseInt(Stock);
+                        String Price = request.getParameter("Price");
+                        Price = new String(Price.getBytes("ISO-8859-1"),"utf-8");
+                        double Price_D = Double.parseDouble(Price);
+                        Booktable newBook = new Booktable(ISBN,Title,Author,Stock_I,Price_D);
+                        booktableFacade.create(newBook);
+                        response.sendRedirect("RelSuccess.jsp");
+                    }
+                    else{
+                    Booktable bk = (Booktable) request.getSession().getAttribute("bookinfo");
+                    bk.setStock(bk.getStock()+Integer.parseInt(request.getParameter("Stock")));
+                    booktableFacade.edit(bk);
+                    response.sendRedirect("RelSuccess.jsp");
+                    }
                 }
                 else{
                     response.sendRedirect("welcome.jsp");
