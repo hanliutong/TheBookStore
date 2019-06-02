@@ -46,8 +46,7 @@ public class CtrlServlet extends HttpServlet {
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
             /* TODO output your page here. You may use following sample code. */
@@ -227,6 +226,22 @@ public class CtrlServlet extends HttpServlet {
             out.println("</html>");
             
                 
+        }
+        catch(NullPointerException | NumberFormatException| ArrayIndexOutOfBoundsException | IOException |ServletException E){
+            System.out.printf(E.getLocalizedMessage());
+            Enumeration<String> attributeNames = request.getSession().getAttributeNames();
+            while(attributeNames.hasMoreElements()){
+                request.getSession().removeAttribute(attributeNames.nextElement());
+            }
+            Enumeration<String> parameterNames = request.getParameterNames();
+            while(parameterNames.hasMoreElements()){
+                request.removeAttribute(parameterNames.nextElement());
+            }
+            try {
+                response.sendRedirect("welcome.jsp");
+            } catch (IOException ex) {
+                Logger.getLogger(CtrlServlet.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 

@@ -20,9 +20,10 @@
         <h1>Order Page</h1>
         <form action="CtrlServlet" method="post">
             <input type="hidden" name="page" value="Order">
-            <table border=\"1\">
-                <tr><td>ISBN</td><td>书名</td><td>作者</td><td>库存</td><td>单价</td><td>数量</td><td>价格</td></tr>
-            <% List L = (List)request.getSession().getAttribute("carttable"); 
+            <%try{%>
+
+            <% 
+            List L = (List)request.getSession().getAttribute("carttable"); 
             List<Integer> N = (List)request.getSession().getAttribute("numtable"); 
             request.getSession().removeAttribute("carttable");
             request.getSession().removeAttribute("booktable");
@@ -30,7 +31,10 @@
             Iterator It = L.iterator();
             Entity.Booktable bk = new Booktable();
             double totalPeice = 0;
-            int i = 0;
+            int i = 0;%>
+            <table border=\"1\">
+                <tr><td>ISBN</td><td>书名</td><td>作者</td><td>库存</td><td>单价</td><td>数量</td><td>价格</td></tr>
+            <% 
             while(It.hasNext()){
                 bk = (Entity.Booktable)It.next();
                 double price = bk.getPrice() *N.get(i);
@@ -50,7 +54,12 @@
             </table>
             <b>地址: <%=addressStr%></b><br>
             <b>总价: <%=totalPeice%></b><br>
-           
+           <% }
+            catch(Exception e){%>
+            <h2>下单失败</h2>
+            <a href="welcome.jsp">返回</a>
+            <%}
+            %>       
         </form>
     </body>
 </html>
