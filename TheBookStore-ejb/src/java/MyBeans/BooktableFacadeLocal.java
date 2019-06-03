@@ -28,7 +28,7 @@ public interface BooktableFacadeLocal {
     List<Booktable> findAll();
     List<Booktable> findByTitle(Object Title);
     List<Booktable> findByISBN(Object isbn);
-    List<Booktable> findRange(int[] range);
+//    List<Booktable> findRange(int[] range);
 
     int count();
     

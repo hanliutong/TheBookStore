@@ -59,14 +59,14 @@ public abstract class AbstractFacade<T> {
         return q.getResultList();
     }
 
-    public List<T> findRange(int[] range) {
-        javax.persistence.criteria.CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();
-        cq.select(cq.from(entityClass));
-        javax.persistence.Query q = getEntityManager().createQuery(cq);
-        q.setMaxResults(range[1] - range[0] + 1);
-        q.setFirstResult(range[0]);
-        return q.getResultList();
-    }
+//    public List<T> findRange(int[] range) {
+//        javax.persistence.criteria.CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();
+//        cq.select(cq.from(entityClass));
+//        javax.persistence.Query q = getEntityManager().createQuery(cq);
+//        q.setMaxResults(range[1] - range[0] + 1);
+//        q.setFirstResult(range[0]);
+//        return q.getResultList();
+//    }
 
     public int count() {
         javax.persistence.criteria.CriteriaQuery cq = getEntityManager().getCriteriaBuilder().createQuery();

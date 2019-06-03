@@ -86,10 +86,10 @@ public class CartBean implements CartBeanLocal {
         return map.size();
     }
 
-    @Override
-    public HashMap gets() {
-        return (HashMap) map;
-    }
+//    @Override
+//    public HashMap gets() {
+//        return (HashMap) map;
+//    }
 
     @Override
     public void updateNum(String isbn, int Num) {

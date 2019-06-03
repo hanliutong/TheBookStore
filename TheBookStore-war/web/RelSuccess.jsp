@@ -17,6 +17,8 @@
         <%
             request.getSession().removeAttribute("bookinfo");
         %>
+        <div>
         <a href="welcome.jsp"> 返回 </a>
+        </div>
     </body>
 </html>

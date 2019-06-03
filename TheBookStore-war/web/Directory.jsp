@@ -8,7 +8,6 @@
 <%@page import="java.util.Iterator"%>
 <%@page import="java.util.List"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%String ans = ""; %>
 <!DOCTYPE html>
 <html>
     <head>
@@ -20,9 +19,11 @@
         <h1>Directory Page!</h1>
         <form action="CtrlServlet" method="post">
             <input type="hidden" name="page" value="Directory">
+            <%try{%>
             <table border=\"1\">
                 <tr><td>ISBN</td><td>书名</td><td>作者</td><td>库存</td><td>价格</td><td>数量</td></tr>
             <% List L = (List)request.getSession().getAttribute("booktable"); 
+            //异常最有可能从这里产生，当session超时后，会尝试对null调用getAttribute方法
             Iterator It = L.iterator();
             Entity.Booktable bk = new Booktable();
             while(It.hasNext()){
@@ -37,7 +38,14 @@
                     <td><input type="number" name = <%=bk.getIsbn()%> value="0" min="0" max=<%=bk.getStock()%>></td>
                 </tr>
                 <%}%>
-            </table>        
+            </table> 
+            <% }//try
+            catch(Exception e){%>
+            <h2>服务器异常，请返回</h2>
+            <a href="welcome.jsp">返回</a><br><br>
+            <%
+            }//catch
+            %>       
             <input type="submit" name = "submit" value = "Cart">
             <input type="submit" name = "submit" value = "Search">
         </form>

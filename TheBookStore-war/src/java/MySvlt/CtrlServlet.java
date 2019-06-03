@@ -37,70 +37,59 @@ public class CtrlServlet extends HttpServlet {
     @EJB
     private BooktableFacadeLocal booktableFacade;
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response) {
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
             /* TODO output your page here. You may use following sample code. */
-            
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet CtrlServlet</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1> getRemoteAddr: " + request.getRemoteAddr()+ "</h1>");
-            out.println("<h1> getAttribute: " + request.getSession().getAttribute(request.getRemoteAddr())+ "</h1>");
-            Enumeration attr = request.getSession().getAttributeNames();
-            while(attr.hasMoreElements()){
-                out.println(attr.nextElement()+ "<br>");
-            }
+//            response.resetBuffer();
+
              
-            Entity.Booktable P = new Entity.Booktable();
             if(request.getSession().getAttribute(request.getRemoteAddr() )==null){//创建有状态会话Bean
                     cartBean = lookupCartBeanLocal();
                     request.getSession(). setAttribute(request. getRemoteAddr(),  this.cartBean);
-                    out.println("session超时");
-                    out.println("<a href = \"Search.jsp\">返回</a>");
+
                 }else{
                     cartBean = (CartBeanLocal) request.getSession().getAttribute(request.getRemoteAddr());
                 } 
+            if (request.getParameter("page").equals("welcome")){//welcom.jsp收到请求
+                Enumeration<String> attributeNames = request.getSession().getAttributeNames();
+                while(attributeNames.hasMoreElements()){
+                    request.getSession().removeAttribute(attributeNames.nextElement());
+                }//清空Session中的属性
+                Enumeration<String> parameterNames = request.getParameterNames();
+                while(parameterNames.hasMoreElements()){
+                    request.removeAttribute(parameterNames.nextElement());
+                }//清空request中的属性
+                if(request.getParameter("submit").equals("Search")){//Search
+                    response.sendRedirect("Search.jsp");
+                }
+                else{//Release
+                    response.sendRedirect("Release.jsp");
+                }
+            }
             
             if (request.getParameter("page").equals("Search")){//从Search.jsp收到请求
-                out.println("get Search");
                 String str = request.getParameter("bookname");
-                str = new String(str.getBytes("ISO-8859-1"),"utf-8").toUpperCase();
-                str = "%"+str+"%";
-                out.println("<h2> Search </h2>");
-                out.println(booktableFacade.count());
-                out.println(str);
+                str = new String(str.getBytes("ISO-8859-1"),"utf-8").toUpperCase();//忽略大小写
+                str = "%"+str+"%";//模糊查询
                 List<Booktable> findByTitle = booktableFacade.findByTitle(str);
                 request.getSession().setAttribute("booktable", findByTitle);
                 request.getRequestDispatcher("Directory.jsp").forward(request, response);
-//                response.sendRedirect("Directory.jsp");
             }//Search.jsp
+            
             if (request.getParameter("page").equals("Directory")){//从Directory.jsp收到请求
                 if(request.getParameter("submit").equals("Search")){
                     response.sendRedirect("Search.jsp");
                 }
                 else{
-                    out.println("get Directory");
                     Enumeration it = request.getParameterNames();
                     it.nextElement();//跳过page属性
                     while (it.hasMoreElements()){
                         String isbn = (String) it.nextElement();
                         if("0".equals(request.getParameter(isbn)) || !(isbn.matches("[0-9]+")))
                             continue;
-                        String parameter = request.getParameter(isbn);
-                        cartBean.setISBNandNum(isbn, Integer.parseInt(parameter));
+                        String Num = request.getParameter(isbn);
+                        cartBean.setISBNandNum(isbn, Integer.parseInt(Num));
                     }
                     ArrayList<Booktable> tmpList = new ArrayList<>();
                     for (int i = 0;i < cartBean.size();i++){
@@ -114,19 +103,17 @@ public class CtrlServlet extends HttpServlet {
                 }
             }//Directory.jsp
             
-            
-            
             if (request.getParameter("page").equals("Cart")){//从Cart.jsp收到请求
                 Enumeration it = request.getParameterNames();
                 it.nextElement();//跳过page属性
-                for(int i =0;it.hasMoreElements();i++){
+                while (it.hasMoreElements()){
                     String isbn = (String) it.nextElement();
                     if(!(isbn.matches("[0-9]+")))
                             continue;
                     else{
                         cartBean.updateNum(isbn, Integer.parseInt(request.getParameter(isbn)));
                     }
-                }//保存Cart页上数量更改
+                }//保存Cart页上数量更改,如果数量修改为0，updateNum函数会删除该组数据
                 switch(request.getParameter("submit")){
                     case("Directory"):
                         request.getRequestDispatcher("Directory.jsp").forward(request, response);
@@ -134,23 +121,22 @@ public class CtrlServlet extends HttpServlet {
                     case("Order"):
                         if (cartBean.getNumber().isEmpty()){
                             request.getRequestDispatcher("Order.jsp").forward(request, response);
-                        }
+                        }//下空订单，直接转发，Order会做异常处理
                         else{
                             request.getSession().setAttribute("numtable", cartBean.getNumber());
-//                            List L = (List)request.getSession().getAttribute("carttable"); 
                             List L = cartBean.getISBN();
                             ArrayList<Booktable> tmpList = new ArrayList<>();
                             Iterator It = L.iterator();
                             Entity.Booktable bk = new Booktable();
-                            boolean check = true;
+                            boolean check = true;//库存检查
                             for(int i =0;It.hasNext();i++){
                                 bk = booktableFacade.findByISBN(It.next()).get(0) ;
-                                if((bk.getStock()-cartBean.getNumber().get(i))<0){
+                                if((bk.getStock()-cartBean.getNumber().get(i))<0){//不够了
                                     check = false;
                                     break;
                                 }
                                 else{
-                                bk.setStock(bk.getStock()-cartBean.getNumber().get(i));//去库存
+                                bk.setStock(bk.getStock()-cartBean.getNumber().get(i));//够，去库存，
                                 tmpList.add(bk);
                                 }
                             }
@@ -158,7 +144,7 @@ public class CtrlServlet extends HttpServlet {
                                 It = tmpList.iterator();
                                 while(It.hasNext()){
                                     booktableFacade.edit((Booktable) It.next());
-                                }
+                                }//修改数据库
                                 request.getSession().setAttribute("carttable", tmpList);
                                 request.getRequestDispatcher("Order.jsp").forward(request, response);
                             }
@@ -173,9 +159,12 @@ public class CtrlServlet extends HttpServlet {
                         break;
                 }
             }//Cart.jsp
+            
             if (request.getParameter("page").equals("Order")){
-                
+                //order还不会发请求，不过万一我要增量代码呢
             }
+            
+            //以下是扩展功能了，原题目中不要求
             if (request.getParameter("page").equals("Release")){
                 String ISBN = request.getParameter("ISBN");
                 ISBN = new String(ISBN.getBytes("ISO-8859-1"),"utf-8");
@@ -184,17 +173,16 @@ public class CtrlServlet extends HttpServlet {
                     request.getSession().setAttribute("bookinfo", findByISBN.get(0));
                     request.getRequestDispatcher("NeedMoreInf.jsp").forward(request, response);
                 }
-                else{
+                else{//没查到，放个null，jsp会去处理的
                     request.getSession().setAttribute("bookinfo", null);
                     request.getRequestDispatcher("NeedMoreInf.jsp").forward(request, response);
-//                    response.sendRedirect("NeedMoreInf.jsp");
                 }
             }
             
             
             if (request.getParameter("page").equals("NeedMoreInf")){
                 if(request.getParameter("submit").equals("submit")){
-                    if(request.getSession().getAttribute("bookinfo") == null){
+                    if(request.getSession().getAttribute("bookinfo") == null){//新书
                         String ISBN = request.getParameter("ISBN");
                         ISBN = new String(ISBN.getBytes("ISO-8859-1"),"utf-8");
                         String Title = request.getParameter("Title");
@@ -211,23 +199,21 @@ public class CtrlServlet extends HttpServlet {
                         booktableFacade.create(newBook);
                         response.sendRedirect("RelSuccess.jsp");
                     }
-                    else{
+                    else{//原来就有的书，加库存
                     Booktable bk = (Booktable) request.getSession().getAttribute("bookinfo");
                     bk.setStock(bk.getStock()+Integer.parseInt(request.getParameter("Stock")));
                     booktableFacade.edit(bk);
                     response.sendRedirect("RelSuccess.jsp");
                     }
                 }
-                else{
+                else{//没加
                     response.sendRedirect("welcome.jsp");
                 }
             }
-            out.println("</body>");
-            out.println("</html>");
-            
+            out.close();
                 
         }
-        catch(NullPointerException | NumberFormatException| ArrayIndexOutOfBoundsException | IOException |ServletException E){
+        catch(NullPointerException | NumberFormatException| ArrayIndexOutOfBoundsException | IOException E){
             System.out.printf(E.getLocalizedMessage());
             Enumeration<String> attributeNames = request.getSession().getAttributeNames();
             while(attributeNames.hasMoreElements()){

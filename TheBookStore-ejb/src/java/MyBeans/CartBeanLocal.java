@@ -29,7 +29,7 @@ public interface CartBeanLocal {
 
     int size();
 
-    HashMap gets();
+//    HashMap gets();
 
     void updateNum(String isbn, int Num);
     

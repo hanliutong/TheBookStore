@@ -17,10 +17,7 @@
         <form method="post" action="CtrlServlet" >
             <input type="hidden" name="page" value="Release">
             ISBN:<input type="number" name="ISBN" required=""><br>
-            <!--<input type="text" name="Title"required="">-->
-            <!--<input type="text" name ="Author"required="">-->
             数量:<input type="number" name ="Stock"required="" min="1" value="1"><br>
-            <!--<input type="number" name="Price"required="">-->
             <input type="submit" >
         </form>
     </body>

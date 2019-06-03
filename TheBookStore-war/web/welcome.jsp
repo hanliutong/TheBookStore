@@ -15,8 +15,14 @@
     <body>
         <h1>在线书城</h1>
         <div>
-        <a href="Search.jsp">购书</a>
-        <a href="Release.jsp">发布</a>
+            <form action="CtrlServlet" method="post">
+                <input type="hidden" name="page" value="welcome">
+                <input type = "submit" name="submit" value="Search">
+                <input type = "submit" name="submit" value="Release">
+            </form>
+        <%--a href="Search.jsp">购书</a>
+        <a href="Release.jsp">发布</a--%>
+        
         </div>
     </body>
 </html>

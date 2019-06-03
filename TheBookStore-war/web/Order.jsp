@@ -55,12 +55,12 @@
             </table>
             <b>地址: <%=addressStr%></b><br>
             <b>总价: <%=totalPeice%></b><br>
-           <% }
+           <% }//try
             catch(Exception e){%>
             <h2>下单失败</h2>
             <a href="welcome.jsp">返回</a>
             <%
-            }
+            }//catch
             %>       
         </form>
     </body>
