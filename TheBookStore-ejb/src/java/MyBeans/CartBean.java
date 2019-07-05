@@ -96,6 +96,9 @@ public class CartBean implements CartBeanLocal {
         if(this.map == null){
             this.map = new HashMap<>();
         }
+        if (Num < 0){
+            Num = 0;
+        }
         if(Num == 0){
             map.remove(isbn);
         }

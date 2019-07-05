@@ -5,6 +5,7 @@
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%String str =(String) request.getSession().getAttribute("UID");%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -14,6 +15,7 @@
     </head>
     <body>
         <h1>发布成功</h1>
+        <h2>用户<%=str%>，您好</h2>
         <%
             request.getSession().removeAttribute("bookinfo");
         %>

@@ -8,6 +8,7 @@
 <%@page import="java.util.Iterator"%>
 <%@page import="java.util.List"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%String str =(String) request.getSession().getAttribute("UID");%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -17,6 +18,7 @@
     </head>       
     <body>
         <h1>Directory Page!</h1>
+        <h2>用户<%=str%>，您好</h2>
         <form action="CtrlServlet" method="post">
             <input type="hidden" name="page" value="Directory">
             <%try{%>
@@ -41,7 +43,7 @@
             </table> 
             <% }//try
             catch(Exception e){%>
-            <h2>服务器异常，请返回</h2>
+            <h3>服务器异常，请返回</h3>
             <a href="welcome.jsp">返回</a><br><br>
             <%
             }//catch

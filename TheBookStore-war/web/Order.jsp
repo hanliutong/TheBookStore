@@ -8,6 +8,7 @@
 <%@page import="Entity.Booktable"%>
 <%@page import="java.util.List"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%String str =(String) request.getSession().getAttribute("UID");%>
 <!DOCTYPE html>
 <%  String addressStr = request.getParameter("address");
     addressStr = new String(addressStr.getBytes("ISO-8859-1"),"utf-8");%>
@@ -19,6 +20,7 @@
     </head>
     <body>
         <h1>Order Page</h1>
+        <h2>用户<%=str%>，您好</h2>
         <form action="CtrlServlet" method="post">
             <input type="hidden" name="page" value="Order">
             <%try{%>
@@ -57,7 +59,7 @@
             <b>总价: <%=totalPeice%></b><br>
            <% }//try
             catch(Exception e){%>
-            <h2>下单失败</h2>
+            <h3>下单失败</h3>
             <a href="welcome.jsp">返回</a>
             <%
             }//catch

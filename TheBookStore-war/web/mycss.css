@@ -44,13 +44,14 @@ form,table
     margin: auto;
     text-align:center;
 }
-h2
+h3
 {
     color:red;
     font-size:20px;
 }
-h3
+h2
 {
     color:whitesmoke;
-    font-size:20px;
+    font-size:10px;
+    text-align: right;
 }

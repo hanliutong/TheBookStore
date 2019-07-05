@@ -6,6 +6,7 @@
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="Entity.Booktable"%>
+<%String str =(String) request.getSession().getAttribute("UID");%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -18,6 +19,7 @@
             if(request.getSession().getAttribute("bookinfo") == null){
         %>
         <h1>补全信息</h1>
+        <h2>用户<%=str%>，您好</h2>
         <form action="CtrlServlet" method="post">
             <input type="hidden" name="page" value="NeedMoreInf">
             <input type="hidden" name="ISBN" value=<%=request.getParameter("ISBN")%>>

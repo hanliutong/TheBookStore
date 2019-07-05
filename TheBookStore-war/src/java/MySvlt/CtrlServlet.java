@@ -13,6 +13,11 @@ import MyBeans.CartBean;
 import MyBeans.CartBeanLocal;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -27,6 +32,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import rmi_server_bookstore.BookStore;
 
 /**
  *
@@ -37,7 +43,7 @@ public class CtrlServlet extends HttpServlet {
     @EJB
     private BooktableFacadeLocal booktableFacade;
 
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException {
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException{
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
             /* TODO output your page here. You may use following sample code. */
@@ -51,8 +57,9 @@ public class CtrlServlet extends HttpServlet {
                 }else{
                     cartBean = (CartBeanLocal) request.getSession().getAttribute(request.getRemoteAddr());
                 } 
-            if (request.getParameter("page").equals("welcome")){//welcom.jsp收到请求
+            if (request.getParameter("page").equals("welcome")){//welcome.jsp收到请求
                 Enumeration<String> attributeNames = request.getSession().getAttributeNames();
+                String UID = (String)request.getSession().getAttribute("UID");
                 while(attributeNames.hasMoreElements()){
                     request.getSession().removeAttribute(attributeNames.nextElement());
                 }//清空Session中的属性
@@ -60,12 +67,34 @@ public class CtrlServlet extends HttpServlet {
                 while(parameterNames.hasMoreElements()){
                     request.removeAttribute(parameterNames.nextElement());
                 }//清空request中的属性
+                if (!UID.isEmpty()){
+                    request.getSession().setAttribute("UID", UID);
+                }
                 if(request.getParameter("submit").equals("Search")){//Search
-                    response.sendRedirect("Search.jsp");
+                    request.getRequestDispatcher("Search.jsp").forward(request, response);
                 }
                 else{//Release
-                    response.sendRedirect("Release.jsp");
+                    request.getRequestDispatcher("Release.jsp").forward(request, response);
                 }
+            }
+            if (request.getParameter("page").equals("Login")){//Login.jsp收到请求
+                String usr_string = request.getParameter("USR");
+                String pws_string = request.getParameter("PWD");
+                Registry Reg  = LocateRegistry.getRegistry("47.101.150.13", 2099);
+                BookStore obj;
+                boolean check = false;
+                try {
+                    obj = (BookStore) Reg.lookup("rmi//47.101.150.13:2099/BOOKSTORE");
+                    check = obj.Check(usr_string, pws_string);
+                } catch (RemoteException | NotBoundException ex) {
+                    Logger.getLogger(CtrlServlet.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                if (check){
+                    request.getSession().setAttribute("UID", usr_string);
+                    request.getRequestDispatcher("welcome.jsp").forward(request, response);
+                }
+                else
+                    response.sendRedirect("Login.jsp");
             }
             
             if (request.getParameter("page").equals("Search")){//从Search.jsp收到请求
@@ -128,6 +157,29 @@ public class CtrlServlet extends HttpServlet {
                             ArrayList<Booktable> tmpList = new ArrayList<>();
                             Iterator It = L.iterator();
                             Entity.Booktable bk = new Booktable();
+                            double totalPrice = 0;
+                            int point = 0;
+                            for(int i =0;It.hasNext();i++){
+                                bk = booktableFacade.findByISBN(It.next()).get(0) ;
+                                double price = bk.getPrice();
+                                Integer num = cartBean.getNumber().get(i);
+                                totalPrice += price*num;
+                            }
+                            Registry Reg  = LocateRegistry.getRegistry("47.101.150.13", 2099);
+                            BookStore obj = null;
+                            try {
+                                obj = (BookStore) Reg.lookup("rmi//47.101.150.13:2099/BOOKSTORE");
+                                point = obj.getPoint((String) request.getSession().getAttribute("UID"));
+                            } catch (RemoteException | NotBoundException ex) {
+                                Logger.getLogger(CtrlServlet.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            if (point < totalPrice){
+                                request.getSession().setAttribute("point", String.valueOf(point));
+                                request.getSession().setAttribute("totalPrice", String.valueOf(totalPrice));
+                                request.getRequestDispatcher("ErrPage.jsp").forward(request, response);
+                              }
+                            else{
+                            It = L.iterator();
                             boolean check = true;//库存检查
                             for(int i =0;It.hasNext();i++){
                                 bk = booktableFacade.findByISBN(It.next()).get(0) ;
@@ -145,12 +197,15 @@ public class CtrlServlet extends HttpServlet {
                                 while(It.hasNext()){
                                     booktableFacade.edit((Booktable) It.next());
                                 }//修改数据库
+                                obj.setPoint((String) request.getSession().getAttribute("UID"), point - (int)totalPrice);
                                 request.getSession().setAttribute("carttable", tmpList);
                                 request.getRequestDispatcher("Order.jsp").forward(request, response);
                             }
                             else{
                                 request.getRequestDispatcher("StockErr.jsp").forward(request, response);
                             }
+                            }
+
                         }
                         break;
                     default:
@@ -178,10 +233,28 @@ public class CtrlServlet extends HttpServlet {
                     request.getRequestDispatcher("NeedMoreInf.jsp").forward(request, response);
                 }
             }
-            
+            if (request.getParameter("page").equals("signin")){
+                Registry Reg  = LocateRegistry.getRegistry("47.101.150.13", 2099);
+                BookStore obj = null;
+                String PWD = request.getParameter("PWD");
+                PWD = new String(PWD.getBytes("ISO-8859-1"),"utf-8");
+                String UserName = request.getParameter("UserName");
+                UserName = new String(UserName.getBytes("ISO-8859-1"),"utf-8");
+                String phoneNum = request.getParameter("phoneNum");
+                phoneNum = new String(phoneNum.getBytes("ISO-8859-1"),"utf-8");
+                    try {
+                        obj = (BookStore) Reg.lookup("rmi//47.101.150.13:2099/BOOKSTORE");
+                        String UID = obj.addUser(PWD, UserName, phoneNum);
+                        request.getSession().setAttribute("newUserId", UID);
+                    } catch (RemoteException | NotBoundException ex) {
+                        Logger.getLogger(CtrlServlet.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+               request.getRequestDispatcher("SignInSuccful.jsp").forward(request, response);
+            }
             
             if (request.getParameter("page").equals("NeedMoreInf")){
                 if(request.getParameter("submit").equals("submit")){
+                    double Price_D = 0;
                     if(request.getSession().getAttribute("bookinfo") == null){//新书
                         String ISBN = request.getParameter("ISBN");
                         ISBN = new String(ISBN.getBytes("ISO-8859-1"),"utf-8");
@@ -194,17 +267,28 @@ public class CtrlServlet extends HttpServlet {
                         int Stock_I = Integer.parseInt(Stock);
                         String Price = request.getParameter("Price");
                         Price = new String(Price.getBytes("ISO-8859-1"),"utf-8");
-                        double Price_D = Double.parseDouble(Price);
+                        Price_D = Double.parseDouble(Price);
                         Booktable newBook = new Booktable(ISBN,Title,Author,Stock_I,Price_D);
                         booktableFacade.create(newBook);
-                        response.sendRedirect("RelSuccess.jsp");
                     }
                     else{//原来就有的书，加库存
-                    Booktable bk = (Booktable) request.getSession().getAttribute("bookinfo");
-                    bk.setStock(bk.getStock()+Integer.parseInt(request.getParameter("Stock")));
-                    booktableFacade.edit(bk);
-                    response.sendRedirect("RelSuccess.jsp");
+                        Booktable bk = (Booktable) request.getSession().getAttribute("bookinfo");
+                        Price_D = bk.getPrice();
+                        bk.setStock(bk.getStock()+Integer.parseInt(request.getParameter("Stock")));
+                        booktableFacade.edit(bk);
                     }
+                    Registry Reg  = LocateRegistry.getRegistry("47.101.150.13", 2099);
+                    BookStore obj;
+                    String UID =(String) request.getSession().getAttribute("UID");
+                    int point = 0;
+                    try {
+                        obj = (BookStore) Reg.lookup("rmi//47.101.150.13:2099/BOOKSTORE");
+                        point = obj.getPoint(UID);
+                        obj.setPoint(UID, (point+(int)Price_D));
+                    } catch (RemoteException | NotBoundException ex) {
+                        Logger.getLogger(CtrlServlet.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    response.sendRedirect("RelSuccess.jsp");
                 }
                 else{//没加
                     response.sendRedirect("welcome.jsp");
@@ -213,8 +297,9 @@ public class CtrlServlet extends HttpServlet {
             out.close();
                 
         }
+
         catch(NullPointerException | NumberFormatException| ArrayIndexOutOfBoundsException | IOException E){
-            System.out.printf(E.getLocalizedMessage());
+            //System.out.printf(E.getLocalizedMessage());
             Enumeration<String> attributeNames = request.getSession().getAttributeNames();
             while(attributeNames.hasMoreElements()){
                 request.getSession().removeAttribute(attributeNames.nextElement());
@@ -225,6 +310,7 @@ public class CtrlServlet extends HttpServlet {
             }
             try {
                 response.sendRedirect("welcome.jsp");
+                return;
             } catch (IOException ex) {
                 Logger.getLogger(CtrlServlet.class.getName()).log(Level.SEVERE, null, ex);
             }

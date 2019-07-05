@@ -8,6 +8,7 @@
 <%@page import="java.util.Iterator"%>
 <%@page import="java.util.List"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%String str =(String) request.getSession().getAttribute("UID");%>
 <!DOCTYPE html>
 <html>
     <head>
@@ -17,7 +18,7 @@
     </head>
     <body>
         <h1>Cart Page</h1>
-
+        <h2>用户<%=str%>，您好</h2>
         <form action="CtrlServlet" method="post">
             <input type="hidden" name="page" value="Cart">
 
@@ -48,13 +49,13 @@
                     <% i++;
             }//while%>
             </table>    
-            <input type="text" name ="address" value="请输入地址">
+            <input type="text" name ="address" value="请输入地址，默认自提">
             <br>
             <input type="submit" name = "submit" value = "Order">
                        <% 
             }//try
             catch(Exception e){%>
-            <h2>购物车异常，请返回</h2>
+            <h3>购物车异常，请返回</h3>
             <a href="welcome.jsp">返回</a>
             <%
             }//catch
